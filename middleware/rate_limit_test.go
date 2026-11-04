@@ -2,10 +2,13 @@ package middleware
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -289,4 +292,50 @@ func TestGlobalWebRateLimitCountsFrontendFilesInStaticBucket(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "1", webCount)
 	})
+}
+
+type captchaRoundTripper func(*http.Request) (*http.Response, error)
+
+func (fn captchaRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
+	return fn(request)
+}
+
+func TestPasswordLoginCaptchaCannotBeSkipped(t *testing.T) {
+	oldMode, oldEnabled, oldSite, oldSecret, oldClient := common.LoginCaptchaMode, common.TurnstileCheckEnabled, common.TurnstileSiteKey, common.TurnstileSecretKey, turnstileClient
+	t.Cleanup(func() {
+		common.LoginCaptchaMode, common.TurnstileCheckEnabled, common.TurnstileSiteKey, common.TurnstileSecretKey, turnstileClient = oldMode, oldEnabled, oldSite, oldSecret, oldClient
+	})
+	common.TurnstileCheckEnabled = false
+	for _, mode := range []string{common.LoginCaptchaImage, common.LoginCaptchaTurnstile, "unknown"} {
+		t.Run(mode, func(t *testing.T) {
+			common.LoginCaptchaMode = mode
+			common.TurnstileSiteKey = "site"
+			common.TurnstileSecretKey = "secret"
+			called := false
+			router := gin.New()
+			router.POST("/api/user/login", LoginCaptchaCheck(), func(c *gin.Context) { called = true; c.Status(http.StatusNoContent) })
+			response := httptest.NewRecorder()
+			router.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/api/user/login", nil))
+			assert.False(t, called)
+			assert.NotEqual(t, http.StatusNoContent, response.Code)
+		})
+	}
+	common.LoginCaptchaMode = common.LoginCaptchaTurnstile
+	turnstileClient = &http.Client{Transport: captchaRoundTripper(func(request *http.Request) (*http.Response, error) {
+		require.Equal(t, "https://challenges.cloudflare.com/turnstile/v0/siteverify", request.URL.String())
+		require.NoError(t, request.ParseForm())
+		assert.Equal(t, "proof", request.Form.Get("response"))
+		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(`{"success":true}`)), Header: make(http.Header)}, nil
+	})}
+	router := gin.New()
+	router.POST("/api/user/login", LoginCaptchaCheck(), func(c *gin.Context) { c.Status(http.StatusNoContent) })
+	request := httptest.NewRequest(http.MethodPost, "/api/user/login", nil)
+	request.Header.Set("X-Turnstile-Token", "proof")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusNoContent, response.Code)
+	turnstileClient = &http.Client{Transport: captchaRoundTripper(func(request *http.Request) (*http.Response, error) { return nil, errors.New("provider offline") })}
+	response = httptest.NewRecorder()
+	router.ServeHTTP(response, request.Clone(context.Background()))
+	assert.Equal(t, http.StatusServiceUnavailable, response.Code)
 }

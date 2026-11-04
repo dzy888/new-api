@@ -200,6 +200,20 @@ func UpdateOption(c *gin.Context) {
 		option.Value = fmt.Sprintf("%v", option.Value)
 	}
 	switch option.Key {
+	case "LoginCaptchaMode":
+		if option.Value != common.LoginCaptchaImage && option.Value != common.LoginCaptchaTurnstile {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "code": "LOGIN_CAPTCHA_MODE_INVALID"})
+			return
+		}
+		if option.Value == common.LoginCaptchaTurnstile && (common.TurnstileSiteKey == "" || common.TurnstileSecretKey == "") {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "code": "LOGIN_CAPTCHA_NOT_CONFIGURED"})
+			return
+		}
+	case "TurnstileSiteKey", "TurnstileSecretKey":
+		if option.Value == "" && common.LoginCaptchaMode == common.LoginCaptchaTurnstile {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "code": "LOGIN_CAPTCHA_NOT_CONFIGURED"})
+			return
+		}
 	case "QuotaForInviter", "QuotaForInvitee":
 		if isPositiveOptionValue(option.Value.(string)) && !operation_setting.IsPaymentComplianceConfirmed() {
 			common.ApiErrorT(c, "Payment, redemption, subscription, and invitation reward features are disabled. The administrator must confirm compliance terms before enabling them.")

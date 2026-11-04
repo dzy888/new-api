@@ -177,6 +177,10 @@ docker run --name new-api -d --restart unless-stopped \
 
 打开 [http://localhost:3000](http://localhost:3000)，按初始化向导创建管理员账号。SQLite 数据库存放在挂载的 `data` 目录中，更换容器后仍会保留。
 
+### 登录验证码
+
+密码登录默认使用一次性图形验证码，可在“系统设置 → 身份验证 → 机器人保护”中切换为 Cloudflare Turnstile。切换前先保存 Site Key 和 Secret Key；服务端强制校验，未通过时不会校验密码。验证码取码与登录接口都受限流保护。
+
 ### 发起第一次请求
 
 1. 新建渠道，填写上游 API Key、可用模型和所属分组，执行渠道测试。

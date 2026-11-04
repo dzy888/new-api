@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -152,4 +153,29 @@ func TestSessionLimitDoesNotRecordRejectedLoginAsSuccessful(t *testing.T) {
 	var stored model.User
 	require.NoError(t, db.First(&stored, user.Id).Error)
 	assert.Equal(t, previousLastLoginAt, stored.LastLoginAt)
+}
+
+func TestLoginCaptchaConfigurationRejectsInvalidProvidersAndMissingSecrets(t *testing.T) {
+	oldMode, oldSite, oldSecret := common.LoginCaptchaMode, common.TurnstileSiteKey, common.TurnstileSecretKey
+	t.Cleanup(func() {
+		common.LoginCaptchaMode, common.TurnstileSiteKey, common.TurnstileSecretKey = oldMode, oldSite, oldSecret
+	})
+	for _, tt := range []struct{ name, mode, key, value string }{
+		{"unsupported provider", common.LoginCaptchaImage, "LoginCaptchaMode", "none"},
+		{"Turnstile without keys", common.LoginCaptchaImage, "LoginCaptchaMode", common.LoginCaptchaTurnstile},
+		{"clear active site key", common.LoginCaptchaTurnstile, "TurnstileSiteKey", ""},
+		{"clear active secret key", common.LoginCaptchaTurnstile, "TurnstileSecretKey", ""},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			common.LoginCaptchaMode, common.TurnstileSiteKey, common.TurnstileSecretKey = tt.mode, "", ""
+			payload, err := common.Marshal(map[string]string{"key": tt.key, "value": tt.value})
+			require.NoError(t, err)
+			recorder := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(recorder)
+			c.Request = httptest.NewRequest(http.MethodPut, "/api/option/", strings.NewReader(string(payload)))
+			UpdateOption(c)
+			assert.Equal(t, http.StatusBadRequest, recorder.Code)
+			assert.Equal(t, tt.mode, common.LoginCaptchaMode)
+		})
+	}
 }

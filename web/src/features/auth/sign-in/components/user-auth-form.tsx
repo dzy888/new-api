@@ -41,6 +41,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { login, wechatLoginByCode } from '@/features/auth/api'
 import { LegalConsent } from '@/features/auth/components/legal-consent'
+import {
+  LoginCaptcha,
+  type ImageVerification,
+  type LoginCaptchaHandle,
+} from '@/features/auth/components/login-captcha'
 import { OAuthProviders } from '@/features/auth/components/oauth-providers'
 import { loginFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
@@ -67,6 +72,10 @@ export function UserAuthForm({
 }: AuthFormProps) {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
+  const [imageVerification, setImageVerification] = useState<ImageVerification>(
+    { id: '', code: '' }
+  )
+  const imageCaptchaRef = useRef<LoginCaptchaHandle>(null)
   const [wechatCode, setWeChatCode] = useState('')
   const [agreedToLegal, setAgreedToLegal] = useState(false)
   const [passkeySupported, setPasskeySupported] = useState(false)
@@ -101,7 +110,9 @@ export function UserAuthForm({
     turnstileToken,
     setTurnstileToken,
     validateTurnstile,
-  } = useTurnstile()
+  } = useTurnstile('login')
+  const imageCaptchaEnabled =
+    (status?.login_captcha_mode ?? 'image') === 'image'
   const { handleLoginResult } = useAuthRedirect()
 
   const hasUserAgreement = Boolean(status?.user_agreement_enabled)
@@ -165,6 +176,13 @@ export function UserAuthForm({
       return
     }
 
+    if (
+      imageCaptchaEnabled &&
+      (!imageVerification.id || !imageVerification.code.trim())
+    ) {
+      toast.error(t('Enter the code shown'))
+      return
+    }
     if (!validateTurnstile()) return
 
     const submittedTurnstileToken = turnstileToken
@@ -177,6 +195,8 @@ export function UserAuthForm({
     try {
       const res = await login({
         username: data.username,
+        captchaId: imageVerification.id,
+        captchaCode: imageVerification.code,
         password: data.password,
         turnstile: submittedTurnstileToken,
         passwordEncryptionEnabled: passwordLoginEncryptionEnabled,
@@ -194,6 +214,7 @@ export function UserAuthForm({
       handleServerError(AuthOperationError.from(error, loginFailedMessage))
     } finally {
       setIsLoading(false)
+      if (imageCaptchaEnabled) void imageCaptchaRef.current?.reload()
     }
   }
 
@@ -395,11 +416,22 @@ export function UserAuthForm({
               )}
             />
 
+            {imageCaptchaEnabled && (
+              <LoginCaptcha
+                ref={imageCaptchaRef}
+                onChange={setImageVerification}
+              />
+            )}
+
             {/* Submit Button */}
             <Button
               type='submit'
               className='mt-2 w-full justify-center gap-2'
-              disabled={isLoading}
+              disabled={
+                isLoading ||
+                (imageCaptchaEnabled &&
+                  (!imageVerification.id || !imageVerification.code.trim()))
+              }
             >
               {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
               {t('Sign in')}

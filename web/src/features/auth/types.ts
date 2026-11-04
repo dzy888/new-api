@@ -28,6 +28,8 @@ export interface LoginPayload {
   username: string
   password: string
   turnstile?: string
+  captchaId?: string
+  captchaCode?: string
   passwordEncryptionEnabled?: boolean
 }
 
@@ -115,6 +117,7 @@ export interface SystemStatus {
     wechat_qr_code_image_url?: string
     wechat_account_qrcode_image_url?: string
     WeChatAccountQRCodeImageURL?: string
+    login_captcha_mode?: 'image' | 'turnstile'
     turnstile_check?: boolean
     turnstile_site_key?: string
     email_verification?: boolean
@@ -162,6 +165,7 @@ export interface SystemStatus {
   wechat_qr_code_image_url?: string
   wechat_account_qrcode_image_url?: string
   WeChatAccountQRCodeImageURL?: string
+  login_captcha_mode?: 'image' | 'turnstile'
   turnstile_check?: boolean
   turnstile_site_key?: string
   email_verification?: boolean

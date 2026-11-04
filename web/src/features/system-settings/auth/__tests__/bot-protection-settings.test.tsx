@@ -38,6 +38,7 @@ import type { UpdateOptionRequest } from '../../types'
 import { BotProtectionSection } from '../bot-protection-section'
 
 const defaults = {
+  LoginCaptchaMode: 'image' as const,
   TurnstileCheckEnabled: false,
   TurnstileSiteKey: '',
   TurnstileSecretKey: '',
@@ -116,4 +117,21 @@ describe('Bot Protection settings saves', () => {
       TurnstileCheckEnabled: true,
     })
   })
+})
+
+it('saves Turnstile credentials before selecting it as the mandatory login provider', async () => {
+  const put = vi
+    .spyOn(api, 'put')
+    .mockResolvedValue({ data: { success: true } })
+  const user = userEvent.setup()
+  await renderSettings()
+  await user.click(screen.getByRole('combobox'))
+  await user.click(screen.getByRole('option', { name: 'Cloudflare Turnstile' }))
+  await user.type(screen.getByRole('textbox', { name: 'Site Key' }), 'site-key')
+  await user.type(screen.getByLabelText('Secret Key'), 'secret-key')
+  await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+  await waitFor(() => expect(put).toHaveBeenCalledTimes(3))
+  expect(
+    put.mock.calls.map(([, body]) => (body as UpdateOptionRequest).key)
+  ).toEqual(['TurnstileSiteKey', 'TurnstileSecretKey', 'LoginCaptchaMode'])
 })

@@ -67,12 +67,19 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
       passwordFields = { password: payload.password }
     }
     const res = await api.post<LoginResponse>(
-      `/api/user/login?turnstile=${turnstile}`,
+      '/api/user/login',
       {
         username: payload.username,
         ...passwordFields,
       },
-      { skipAuthRefresh: true }
+      {
+        skipAuthRefresh: true,
+        headers: {
+          'X-Turnstile-Token': turnstile,
+          'X-Login-Captcha-Id': payload.captchaId ?? '',
+          'X-Login-Captcha-Code': payload.captchaCode?.trim() ?? '',
+        },
+      }
     )
     if (payload.passwordEncryptionEnabled && !res.data?.success) {
       clearPasswordEncryptionCache()

@@ -25,12 +25,14 @@ import { useStatus } from '@/hooks/use-status'
 /**
  * Hook for managing Turnstile verification
  */
-export function useTurnstile() {
+export function useTurnstile(purpose: 'login' | 'other' = 'other') {
   const { status } = useStatus()
   const [turnstileToken, setTurnstileToken] = useState('')
 
   const isTurnstileEnabled = !!(
-    status?.turnstile_check && status?.turnstile_site_key
+    (purpose === 'login'
+      ? status?.login_captcha_mode === 'turnstile'
+      : status?.turnstile_check) && status?.turnstile_site_key
   )
   const turnstileSiteKey = status?.turnstile_site_key || ''
 

@@ -23,7 +23,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import { api, type RefreshOutcome } from '@/lib/api'
 import type { AuthBundle } from '@/stores/auth-store'
 
-import { executeLogout } from './api'
+import { executeLogout, login } from './api'
 import { useOAuthLogin } from './hooks/use-oauth-login'
 import { consumeOAuthLoginRedirect } from './lib/oauth-callback-mode'
 
@@ -178,4 +178,29 @@ describe('logout coordination', () => {
       })
     ).rejects.toBe(originalError)
   })
+})
+
+test('sends login CAPTCHA proofs in headers instead of request URLs', async () => {
+  const post = vi
+    .spyOn(api, 'post')
+    .mockResolvedValue({ data: { success: true } })
+  await login({
+    username: 'test-user',
+    password: 'test-password',
+    captchaId: 'challenge-id',
+    captchaCode: ' 123456 ',
+    turnstile: 'turnstile-proof',
+  })
+  expect(post).toHaveBeenCalledWith(
+    '/api/user/login',
+    { username: 'test-user', password: 'test-password' },
+    expect.objectContaining({
+      skipAuthRefresh: true,
+      headers: {
+        'X-Turnstile-Token': 'turnstile-proof',
+        'X-Login-Captcha-Id': 'challenge-id',
+        'X-Login-Captcha-Code': '123456',
+      },
+    })
+  )
 })
