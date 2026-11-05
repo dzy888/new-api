@@ -1,0 +1,87 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+/* Presentation for the existing Model Square embedded in DmxVideo. */
+html[data-dmxvideo-pricing] {
+  --background: #f8f8f5;
+  --foreground: #0a0a0a;
+  --card: #fff;
+  --card-foreground: #0a0a0a;
+  --popover: #fff;
+  --popover-foreground: #0a0a0a;
+  --primary: #0a0a0a;
+  --primary-foreground: #fff;
+  --secondary: #efefeb;
+  --secondary-foreground: #292524;
+  --muted: #efefeb;
+  --muted-foreground: #78716c;
+  --accent: #eef6ee;
+  --accent-foreground: #15803d;
+  --border: rgb(10 10 10 / 12%);
+  --input: #e7e5e4;
+  --ring: #22c55e;
+  --radius: 0.625rem;
+  --font-ui-sans:
+    'SF Pro Display', 'SF Pro Text', 'PingFang SC', 'Microsoft YaHei',
+    'Helvetica Neue', sans-serif;
+}
+html[data-dmxvideo-pricing].dark {
+  --background: #0a0a0a;
+  --foreground: #f7f7f2;
+  --card: #171717;
+  --card-foreground: #f7f7f2;
+  --popover: #171717;
+  --popover-foreground: #f7f7f2;
+  --primary: #f7f7f2;
+  --primary-foreground: #0a0a0a;
+  --secondary: #262626;
+  --secondary-foreground: #e7e5e4;
+  --muted: #262626;
+  --muted-foreground: #a8a29e;
+  --accent: #14251b;
+  --accent-foreground: #4ade80;
+  --border: rgb(255 255 255 / 10%);
+  --input: #333;
+}
+html[data-dmxvideo-pricing] [class*='max-w-[1800px]'] {
+  max-width: 1320px;
+  padding-top: 1.5rem;
+}
+html[data-dmxvideo-pricing] .dmxvideo-square-header {
+  padding-top: 0.5rem;
+  text-align: left;
+  max-width: none;
+}
+html[data-dmxvideo-pricing] h1 {
+  font-size: 1.875rem;
+  letter-spacing: -0.04em;
+}
+html[data-dmxvideo-pricing] .dmxvideo-square-header p,
+html[data-dmxvideo-pricing] .dmxvideo-square-header [class*='max-w-2xl'] {
+  margin-left: 0;
+  margin-right: 0;
+}
+html[data-dmxvideo-pricing] aside {
+  top: 1rem;
+}
+
+html[data-dmxvideo-pricing] body {
+  font-family:
+    'SF Pro Display', 'SF Pro Text', 'PingFang SC', 'Microsoft YaHei',
+    'Helvetica Neue', sans-serif;
+}

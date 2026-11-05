@@ -43,6 +43,9 @@ This is an AI API gateway/proxy built with Go. It aggregates 40+ upstream AI pro
 
 ## Rules
 
+- 每次任务结束前，清理本次创建且不再需要的临时脚本、验收截图、测试数据库和构建日志，并核对删除结果；保留项目源码、必要配置、交付产物以及其他程序仍在使用的文件。不得仅凭清理命令执行过就声称已全部清理。
+- 模型默认价格统一使用 New API 原有价格同步流程：选择官方倍率预设并按来源原样同步，保留来源提供的上下文阶梯和缓存价格；不要手写补价、批量转换旧倍率或擅自推断别名价格。分组倍率由用户自行配置，不得修改；计费配置不等于开启或扩大模型实际上下文能力。
+
 ### Common Code Quality
 
 - New code should stay direct and readable. Prefer early returns, clear branches, and well-named local variables to deep nesting or layered control flow.

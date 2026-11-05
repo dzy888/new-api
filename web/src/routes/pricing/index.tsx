@@ -24,6 +24,9 @@ import { getModuleAccessForGuard } from '@/lib/nav-modules'
 import { useAuthStore } from '@/stores/auth-store'
 
 const pricingSearchSchema = z.object({
+  embed: z.literal('dmxvideo').optional().catch(undefined),
+  theme: z.enum(['light', 'dark']).optional().catch(undefined),
+  lang: z.enum(['zhCN', 'en']).optional().catch(undefined),
   search: z.string().optional(),
   sort: z.string().optional(),
   vendor: z.string().optional(),

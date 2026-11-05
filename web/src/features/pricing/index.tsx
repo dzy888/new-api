@@ -16,11 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useCallback, useMemo, useState } from 'react'
+import { useSearch } from '@tanstack/react-router'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PublicLayout } from '@/components/layout'
+
+import './dmxvideo.css'
+
 import { PageTransition } from '@/components/page-transition'
+import { useTheme } from '@/context/theme-provider'
 
 import {
   LoadingSkeleton,
@@ -37,7 +42,19 @@ import { useFilters } from './hooks/use-filters'
 import { usePricingData } from './hooks/use-pricing-data'
 
 export function Pricing() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const search = useSearch({ from: '/pricing/' })
+  const embedded = search.embed === 'dmxvideo'
+  const { setTheme } = useTheme()
+  useEffect(() => {
+    if (!embedded) return
+    document.documentElement.dataset.dmxvideoPricing = 'true'
+    if (search.theme) setTheme(search.theme)
+    if (search.lang) void i18n.changeLanguage(search.lang)
+    return () => {
+      delete document.documentElement.dataset.dmxvideoPricing
+    }
+  }, [embedded, search.theme, search.lang, setTheme, i18n])
   const [selectedModelName, setSelectedModelName] = useState<string | null>(
     null
   )
@@ -150,7 +167,7 @@ export function Pricing() {
 
   if (isLoading) {
     return (
-      <PublicLayout showMainContainer={false}>
+      <PublicLayout showMainContainer={false} hideHeader={embedded}>
         <div className='mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <LoadingSkeleton viewMode={viewMode} />
         </div>
@@ -159,11 +176,15 @@ export function Pricing() {
   }
 
   return (
-    <PublicLayout showMainContainer={false}>
+    <PublicLayout showMainContainer={false} hideHeader={embedded}>
       <div className='relative'>
         <div
           aria-hidden
-          className='pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.10]'
+          className={
+            embedded
+              ? 'hidden'
+              : 'pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-20 dark:opacity-[0.10]'
+          }
           style={{
             background: [
               'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.72 0.18 250 / 80%) 0%, transparent 70%)',
@@ -177,7 +198,7 @@ export function Pricing() {
           }}
         />
         <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
-          <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
+          <header className='dmxvideo-square-header mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
             <h1 className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'>
               {t('Model Square')}
             </h1>
